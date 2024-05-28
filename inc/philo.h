@@ -32,6 +32,25 @@
 // pthread_mutex_destroy,  pthread_mutex_lock, pthread_mutex_unlock
 #include <pthread.h>
 
+// Types
+# include <stdbool.h>
+
+typedef struct s_philo {
+	unsigned int		id;
+	bool				left_fork;
+	bool				right_fork;
+	bool				is_sleeping;
+	unsigned long int	your_time;
+}
+
+typedef struct s_data {
+	void					nb_of_philo;
+	unsigned int			time_to_die_in_us;
+	unsigned int			time_to_eat_in_us;
+	unsigned int			time_to_sleep_in_us;
+	unsigned int			nb_of_times_each_philo_must_eat;
+	unsigned long long int	start_time;
+}   t_data;
 
 
 #endif
