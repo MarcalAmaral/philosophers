@@ -41,10 +41,12 @@ typedef struct s_philo {
 	bool				right_fork;
 	bool				is_sleeping;
 	unsigned long int	your_time;
-}
+}	t_philo;
 
+
+// Coloco o tempo para microsegundos pois a função usleep utiliza-se microsegundos.
 typedef struct s_data {
-	void					nb_of_philo;
+	void					*nb_of_philo;
 	unsigned int			time_to_die_in_us;
 	unsigned int			time_to_eat_in_us;
 	unsigned int			time_to_sleep_in_us;

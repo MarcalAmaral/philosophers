@@ -125,6 +125,15 @@ unsigned int	ft_atoui(const char *nptr)
 	return (result);
 }
 
+
+// Todos nascem ao mesmo tempo (tempo inicial).
+// Cada filósofo deve possuir o seu tempo, tempo da última refeição, tempo da soneca e tempo do pensar.
+// Cada filósofo tem um garfo, os quais são compartilhados entre seus outros companheiros de mesa.
+// Partiremos do príncipio que o garfo da esquerda pertence a um filósofo sendo assim o garfo da direita pego emprestado.
+
+// O tempo do filósofo é encadeado com a refeição do mesmo, então o fluxo seria, comer->dormir->pensar,
+// Desde a última refeição ou início da simulação o filósofo, pode morrer caso o tempo_para_morrer seja ultrapassado neste fluxo;
+// O tempo para morrer do filósofo é iniciado no início da simulação e resetado após uma refeição.
 void	instantiation_philo(void *array_of_philo, unsigned int nb_of_philo)
 {
 	unsigned int	index;
@@ -140,16 +149,25 @@ void	instantiation_philo(void *array_of_philo, unsigned int nb_of_philo)
 	return ;
 }
 
+
+// number_of_philosophers: A quantidade de filósofos é a mesma quantidade de garfos
+// time_to_die (in milliseconds): É o tempo no qual ele ficar sem comer ele morrerá, sendo o tempo contado
+// a partir da última refeição ou do início da simulação.
+// time_to_eat (in milliseconds): É o tempo no qual os filósofos levam para comer, durante este tempo
+// eles devem segurar dois garfos.
+// time_to_sleep (in milliseconds): É o tempo que será gasto dormindo.
+// number_of_times_each_philosopher_must_eat: Número de vezes que cada filósofo deve comer, completando-a ou algum filósofo 
+// morrendo a simulação se encerra.
 void	instantiation_struct(int ac, char **av)
 {
-	t_data data;
-	struct timeval *tv;
+	struct timeval	tv;
+	t_data			data;
 
 	memset(&data, 0, sizeof(t_data));
 	data.nb_of_philo = ft_atoui(av[1]);
-	data.time_to_die_in_us = (ft_atoui(av[2]) * 1000);
-	data.time_to_eat_in_us = (ft_atoui(av[3]) * 1000);
-	data.time_to_sleep_in_us = (ft_atoui(av[4]) * 1000);
+	data.time_to_die_in_us = (ft_atoui(av[2]) * 1e3);
+	data.time_to_eat_in_us = (ft_atoui(av[3]) * 1e3);
+	data.time_to_sleep_in_us = (ft_atoui(av[4]) * 1e3);
 	if (gettimeofday(&tv, NULL))
 		return ;
 	data.start_time = tv.tv_usec;
@@ -159,6 +177,9 @@ void	instantiation_struct(int ac, char **av)
 		data.nb_of_times_each_philo_must_eat = -1;
 	return ;
 }
+
+// Como calcular o tempo de execução dos filósofos?
+// Pela diferença no tempo perante o valor inical.
 
 int	main(int ac, char **av)
 {
