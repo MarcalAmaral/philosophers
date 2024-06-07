@@ -134,21 +134,48 @@ unsigned int	ft_atoui(const char *nptr)
 // O tempo do filósofo é encadeado com a refeição do mesmo, então o fluxo seria, comer->dormir->pensar,
 // Desde a última refeição ou início da simulação o filósofo, pode morrer caso o tempo_para_morrer seja ultrapassado neste fluxo;
 // O tempo para morrer do filósofo é iniciado no início da simulação e resetado após uma refeição.
-void	instantiation_philo(void *array_of_philo, unsigned int nb_of_philo)
+t_philo	*instantiation_philo(unsigned int nb_of_philo)
 {
+	t_philo			*philos;
 	unsigned int	index;
-	t_philo			philo;
 
-	memset(&philo, 0, sizeof(t_philo));
+	philos = (t_philo *) malloc((nb_of_philo + 1) * sizeof(t_philo));
+	if (!philos)
+	{
+		printf("An error occurred when alloc philos");
+		return (NULL);
+	}
+	philos[nb_of_philo].id = -1;
 	while (index < nb_of_philo)
 	{
-		philo.id = index;
-		array_of_philo[index] = philo;
+		memset(&philos[index], 0, sizeof(t_philo));
+		if (philos[index + 1].id == -1)
+		{
+			philos[index].id = index + 1;
+			philos[index].right_fork = &philos[0].philo_fork;
+			break ;
+		}
+		philos[index].id = index + 1;
+		philos[index].right_fork = &philos[index + 1].philo_fork;
 		index++;
+	}
+	return (philos);
+}
+
+void	print_matrix_of_philos(t_philo *arr_philos)
+{
+	int 	i;
+
+	i = 0;
+	while (arr_philos[i].id != -1)
+	{
+		printf("id dos philos %d\n", arr_philos[i].id);
+		printf("addr philo fork %p\n", (void *) &arr_philos[i].philo_fork);
+		printf("addr right fork %p\n", (void *) arr_philos[i].right_fork);
+		i++;
 	}
 	return ;
 }
-
 
 // number_of_philosophers: A quantidade de filósofos é a mesma quantidade de garfos
 // time_to_die (in milliseconds): É o tempo no qual ele ficar sem comer ele morrerá, sendo o tempo contado
@@ -164,13 +191,14 @@ void	instantiation_struct(int ac, char **av)
 	t_data			data;
 
 	memset(&data, 0, sizeof(t_data));
-	data.nb_of_philo = ft_atoui(av[1]);
+	data.philos = instantiation_philo(ft_atoui(av[1]));
+	print_matrix_of_philos(data.philos);
 	data.time_to_die_in_us = (ft_atoui(av[2]) * 1e3);
 	data.time_to_eat_in_us = (ft_atoui(av[3]) * 1e3);
 	data.time_to_sleep_in_us = (ft_atoui(av[4]) * 1e3);
 	if (gettimeofday(&tv, NULL))
 		return ;
-	data.start_time = tv.tv_usec;
+	data.start_time = (tv.tv_sec * 1e6) + tv.tv_usec;
 	if (ac == 6)
 		data.nb_of_times_each_philo_must_eat = ft_atoui(av[5]);
 	else
@@ -185,5 +213,6 @@ int	main(int ac, char **av)
 {
 	if (validation_of_paramters(ac, av))
 		return (1);
+	instantiation_struct(ac, av);
 	return (0);
 }
