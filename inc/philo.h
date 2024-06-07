@@ -37,23 +37,25 @@
 
 typedef struct s_philo {
 	unsigned int		id;
+	long int			last_meal;
 	pthread_mutex_t		*right_fork;
 	pthread_mutex_t		philo_fork;
-	int					is_sleeping;
-	unsigned int		last_meal;
-	unsigned long int	your_time;
+	t_data				*data;
 }	t_philo;
 
+typedef struct s_data {
+	long int	time_to_die_in_us;
+	long int	time_to_eat_in_us;
+	long int	time_to_sleep_in_us;
+	long int	nb_of_times_each_philo_must_eat;
+	long int	start_time;
+} 	t_data;
 
 // Coloco o tempo para microsegundos pois a função usleep utiliza-se microsegundos.
-typedef struct s_data {
-	t_philo					*philos;
-	unsigned int			time_to_die_in_us;
-	unsigned int			time_to_eat_in_us;
-	unsigned int			time_to_sleep_in_us;
-	unsigned int			nb_of_times_each_philo_must_eat;
-	unsigned long long int	start_time;
-}   t_data;
+typedef struct s_manager {
+	t_philo	*philos;
+	t_data	*data;
+}   t_manager;
 
 
 #endif

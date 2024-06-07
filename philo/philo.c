@@ -134,7 +134,7 @@ unsigned int	ft_atoui(const char *nptr)
 // O tempo do filósofo é encadeado com a refeição do mesmo, então o fluxo seria, comer->dormir->pensar,
 // Desde a última refeição ou início da simulação o filósofo, pode morrer caso o tempo_para_morrer seja ultrapassado neste fluxo;
 // O tempo para morrer do filósofo é iniciado no início da simulação e resetado após uma refeição.
-t_philo	*instantiation_philo(unsigned int nb_of_philo)
+t_philo	*instantiation_philo(unsigned int nb_of_philo, long int starttime)
 {
 	t_philo			*philos;
 	unsigned int	index;
@@ -153,13 +153,44 @@ t_philo	*instantiation_philo(unsigned int nb_of_philo)
 		{
 			philos[index].id = index + 1;
 			philos[index].right_fork = &philos[0].philo_fork;
+			pthread_mutex_init(&philos[index].philo_fork, NULL);
 			break ;
 		}
+		pthread_mutex_init(&philos[index].philo_fork, NULL);
+		philos[index].last_meal = starttime;
 		philos[index].id = index + 1;
 		philos[index].right_fork = &philos[index + 1].philo_fork;
 		index++;
 	}
 	return (philos);
+}
+
+void	*routine(void *args)
+{
+	t_philo *philo;
+	struct timeval tv;
+	long int time;
+
+	philo = (t_philo *)args;
+	pthread_mutex_lock(philo->right_fork)
+	if (!gettimeofday(&tv, NULL))
+		time = ((tv.tv_sec * 1e3) + (tv.tv_usec / 1e3)); 
+	printf("%ld %d has taken a fork", time, philo->id);
+	pthread_mutex_lock(&philo->philo_fork);
+	printf("%ld %d has taken a fork", time, philo->id);
+	printf("%ld %d is eating", time, philo->id);
+	usleep();
+}
+
+void	print_actions(t_philo philo)
+{
+	static long int	time;
+
+	printf("%d has taken a fork", philo.id);
+	printf("%d is eating", philo.id);
+	printf("%d is sleeping", philo.id);
+	printf("%d is thinking", philo.id);
+	printf("%d is dead", philo.id);
 }
 
 void	print_matrix_of_philos(t_philo *arr_philos)
@@ -188,22 +219,40 @@ void	print_matrix_of_philos(t_philo *arr_philos)
 void	instantiation_struct(int ac, char **av)
 {
 	struct timeval	tv;
-	t_data			data;
+	t_manager		manager;
 
 	memset(&data, 0, sizeof(t_data));
-	data.philos = instantiation_philo(ft_atoui(av[1]));
-	print_matrix_of_philos(data.philos);
-	data.time_to_die_in_us = (ft_atoui(av[2]) * 1e3);
-	data.time_to_eat_in_us = (ft_atoui(av[3]) * 1e3);
-	data.time_to_sleep_in_us = (ft_atoui(av[4]) * 1e3);
+	manager.philos = instantiation_philo(ft_atoui(av[1]));
+	print_matrix_of_philos(manager.philos);
+	manager.time_to_die_in_us = (ft_atoui(av[2]) * 1e3);
+	manager.time_to_eat_in_us = (ft_atoui(av[3]) * 1e3);
+	manager.time_to_sleep_in_us = (ft_atoui(av[4]) * 1e3);
 	if (gettimeofday(&tv, NULL))
 		return ;
-	data.start_time = (tv.tv_sec * 1e6) + tv.tv_usec;
+	manager.start_time = (tv.tv_sec * 1e6) + tv.tv_usec;
 	if (ac == 6)
-		data.nb_of_times_each_philo_must_eat = ft_atoui(av[5]);
+		manager.nb_of_times_each_philo_must_eat = ft_atoui(av[5]);
 	else
-		data.nb_of_times_each_philo_must_eat = -1;
+		manager.nb_of_times_each_philo_must_eat = -1;
 	return ;
+}
+
+int		dead(void)
+{
+	static int	dead;
+
+	dead = 0;
+}
+
+void	manager_routine(t_manager *manager)
+{
+	struct timeval	tv;
+	long int		time;
+
+	while (1)
+	{
+
+	}
 }
 
 // Como calcular o tempo de execução dos filósofos?
