@@ -5,115 +5,145 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: myokogaw <myokogaw@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/05/23 18:09:38 by myokogaw          #+#    #+#             */
-/*   Updated: 2024/05/23 18:09:38 by myokogaw         ###   ########.fr       */
+/*   Created: 2024/06/13 23:30:47 by myokogaw          #+#    #+#             */
+/*   Updated: 2024/06/13 23:30:47 by myokogaw         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
-// Visão Geral (Overview)
+// args for program and sequence respectively -> number of philos, time to die,
+// time to eat, time to sleep and [optionally -> number of each times each phi-
+// sophers must eat].
+// exclude argument of filename bin, we have 4 (ac == 5) arguments or 5 (ac == 6). 
 
-// Quando um filósofo come ele deve dormir logo a seguir, após devolver o garfo a mesa
-// e imediatamente ao acordar ele deve pensar;
 
-// Devo dar free em todo o programa e encerrá-lo imediatamente após um filósofo morrer de fome;
-
-// Todo filósofo deve comer e nao pode morrer de fome.
-
-// Devo receber no máximo 5 váriaveis como argumentos, sendo elas números relativos a 
-// tempo que serão convertidos a milisegundos, sendo elas, (número de filósofos, tempo para morrer,
-// tempo para comer, tempo para dormir e opcionalmente número de vezes que cada filósofo deve comer);
-// Milisegundos para Segundos é igual a (segundos * 10^-3) 1ms == 0.001s;
-
-// Caso receba menos que 4 argumentos aponto erro e encerro o programa, caso eu receba algum valor
-// como entrada que não sejam numeros encerro o programa e aponto o erro.
-
-// Cada filósofo tem seu ID que varia de 1 à número de filósofos.
-
-// O filósofo de ID 1 sentará-se adjacente ao último filósofo (Filósofo com o ID mais alto).
-// Outros filósofos N, sentaram-se entre os N - 1 e N + 1
-
-// No meu programa devo apresentar um logo para o usuário informando o seguinte:
-// ◦ timestamp_in_ms X has taken a fork
-// ◦ timestamp_in_ms X is eating
-// ◦ timestamp_in_ms X is sleeping
-// ◦ timestamp_in_ms X is thinking
-// ◦ timestamp_in_ms X died
-
-// No qual timestamp_in_ms é referente ao tempo desde o início do programa e X
-// é referente ao ID do filósofo.
-// Quando estiver sendo printada essas mensagens de log, o programa não deve apresentar nenhum outro print.
-
-// A morte de um filósofo deve ser apresentada no máximo 10ms após a factual morte do mesmo.
-// Não se deve forçar a morte de filósofos.
-
-// É proibido corrida de dados no seu program (data races).
-
-// Parte mandatória
-
-// Deve-se resolver o problema, com threads e mutexes.
-
-// Cada filósofo deve ser uma thread.
-
-// Deve-se haver um garfo entre cada par de filósofos. Por tanto, se temos uma vários filósofos, teremos
-// Um garfo à direita e um garfo à esquerda;
-
-// Para prevenir a duplicação de garfos, deve-se proteger cada garfo com um mutex.
-
-void	write_err(const char *str)
+// Argument validation
+int	ft_isdigit(char c)
 {
-	if (!str)
-		return ;
-	while (*str)
-		str += write(STDERR_FILENO, str, 1);
+	if (c >= '0' && c <= '9')
+		return (TRUE);
+	return (FALSE);
 }
 
-bool	err_msg_params(int type, char *arg)
+void	write_err(const char *string)
+{
+	if (!string)
+		return ;
+	while (*string)
+		string += write(STDERR_FILENO, string, 1);
+}
+
+int	arg_err_msg(int type, const char *arg)
 {
 	if (type == ('a' + 'c'))
 		write_err("Error\n philosophers: invalid number of args\n");
-	if (type == ('a' + 'v'))
+	else if (type == ('a' + 'v'))
 	{
 		write_err("Error\n philosophers: (");
 		write_err(arg);
 		write_err("): invalid argument, the program receives only digits\n");
 	}
-	return (true);
+	return (EXIT_FAILURE);
 }
 
-bool	ft_isdigit(char c)
-{
-	if (c >= '0' && c <= '9')
-		return (true);
-	return (false);
-}
-
-bool	validation_of_paramters(int ac, char **av)
+int	arg_validation(int ac, char **av)
 {
 	int	matrix_index;
-	int	char_index;
+	int	string_index;
 
 	if (ac < 5 || ac > 6)
-		return (err_msg_params(('a' + 'c'), NULL));
+		return (arg_err_msg(('a' + 'c'), NULL));
 	matrix_index = 1;
 	while (av[matrix_index])
 	{
-		char_index = 0;
-		while (av[matrix_index][char_index])
+		string_index = 0;
+		if (av[matrix_index][string_index] == '\0')
+			return (arg_err_msg(('a' + 'v'), av[matrix_index]));
+		while (av[matrix_index][string_index])
 		{
-			if (!ft_isdigit(av[matrix_index][char_index]))
-				return (err_msg_params(('a' + 'v'), av[matrix_index]));
-			char_index++;
+			if (!ft_isdigit(av[matrix_index][string_index]))
+				return (arg_err_msg(('a' + 'v'), av[matrix_index]));
+			string_index++;
 		}
 		matrix_index++;
 	}
-	return (false);
+	return (EXIT_SUCCESS);
 }
 
-unsigned int	ft_atoui(const char *nptr)
+// Instantiation structs
+#include <stdio.h>
+
+void	err_msg_mutex_init(enum e_error error)
 {
-	unsigned int	result;
+	if (error == EAGAIN)
+		write_err("Resource temporarily unavailable\n");
+	else if (error == ENOMEM)
+		write_err("Cannot allocate memory\n");
+	else if (error == EPERM)
+		write_err("Operation not permitted\n");
+	else if (error == EBUSY)
+		write_err("Device or resource busy\n");
+	else if (error == EINVAL)
+		write_err("Invalid argument\n");
+	return ;
+}
+
+int	err_msg_mutex_destroy(enum e_error error)
+{
+	if (error == EBUSY)
+		write_err("Device or resource busy\n");
+	else if (error == EINVAL)
+		write_err("Invalid argument\n");
+	return (NOERROR);
+}
+
+void	destroying_structs(t_manager *manager)
+{
+	int				array_index;
+	enum e_error	error;
+
+	array_index = 0;
+	while (array_index < manager->data->nb_of_philos)
+	{
+		error = pthread_mutex_destroy(&manager->philos[array_index].philo_fork);
+		if (error != NOERROR)
+			error = err_msg_mutex_destroy(error);
+		array_index++;
+	}
+	free(manager->data);
+	free(manager->philos);
+	return ;
+}
+
+void	print_array_philo(t_philo *philos, long int nb_of_philos)
+{
+	int	array_index;
+
+	array_index = 0;
+	while (array_index < nb_of_philos)
+	{
+		printf("id of philosopher: %ld\n", philos[array_index].id);
+		printf("timestamp of last meal of philosopher: %ld\n", philos[array_index].last_meal);
+		array_index++;
+	}
+	return ;
+}
+
+void	print_data(t_data *data)
+{
+	printf("quantity of philosophers: %ld\n", data->nb_of_philos);
+	printf("time to die in milliseconds: %ld\n", data->time_to_die_in_ms);
+	printf("time to eat in milliseconds: %ld\n", data->time_to_eat_in_ms);
+	printf("time to sleep in milliseconds: %ld\n", data->time_to_sleep_in_ms);
+	printf("quantity of times each philosopher must eat: %ld\n", data->nb_of_times_each_philo_must_eat);
+	printf("timestamp of simulation: %ld\n", data->timestamp_of_simulation);
+	return ;
+}
+
+long int	ft_atoli(const char *nptr)
+{
+	long int	result;
 
 	result = 0;
 	while ((*nptr >= '0') && (*nptr <= '9'))
@@ -125,143 +155,93 @@ unsigned int	ft_atoui(const char *nptr)
 	return (result);
 }
 
-
-// Todos nascem ao mesmo tempo (tempo inicial).
-// Cada filósofo deve possuir o seu tempo, tempo da última refeição, tempo da soneca e tempo do pensar.
-// Cada filósofo tem um garfo, os quais são compartilhados entre seus outros companheiros de mesa.
-// Partiremos do príncipio que o garfo da esquerda pertence a um filósofo sendo assim o garfo da direita pego emprestado.
-
-// O tempo do filósofo é encadeado com a refeição do mesmo, então o fluxo seria, comer->dormir->pensar,
-// Desde a última refeição ou início da simulação o filósofo, pode morrer caso o tempo_para_morrer seja ultrapassado neste fluxo;
-// O tempo para morrer do filósofo é iniciado no início da simulação e resetado após uma refeição.
-t_philo	*instantiation_philo(unsigned int nb_of_philo, long int starttime)
+int	instantiation_struct_err_msg(void)
 {
-	t_philo			*philos;
-	unsigned int	index;
+	write_err("Cannot allocate memory\n");
+	return (EXIT_FAILURE);
+}
 
-	philos = (t_philo *) malloc((nb_of_philo + 1) * sizeof(t_philo));
-	if (!philos)
-	{
-		printf("An error occurred when alloc philos");
+t_data	*instantiation_data_struct(char **av)
+{
+	t_data	*data;
+
+	data = (t_data *) malloc(1 * sizeof(t_data));
+	if (!data)
 		return (NULL);
-	}
-	philos[nb_of_philo].id = -1;
-	while (index < nb_of_philo)
+	data->nb_of_philos = ft_atoli(av[1]);
+	data->time_to_die_in_ms = ft_atoli(av[2]);
+	data->time_to_eat_in_ms = ft_atoli(av[3]);
+	data->time_to_sleep_in_ms = ft_atoli(av[4]);
+	data->nb_of_times_each_philo_must_eat = -1;
+	if (av[5] != NULL)
+		data->nb_of_times_each_philo_must_eat = ft_atoli(av[5]);
+	data->timestamp_of_simulation = 0;
+	return (data);
+}
+
+void	instantiation_philo_struct(t_philo *philo, pthread_mutex_t *right_fork)
+{
+	static int		id;
+	enum e_error	error;
+
+	philo->id = id;
+	philo->last_meal = 0;
+	error = pthread_mutex_init(&philo->philo_fork, NULL);
+	if (error != NOERROR)
+		err_msg_mutex_init(error);
+	philo->right_fork = right_fork;
+	id++;
+}
+
+t_philo	*instantiation_array_philos(long int nb_of_philos)
+{
+	t_philo	*philos;
+	int		array_index;
+
+	philos = (t_philo *) malloc(nb_of_philos * sizeof(t_philo));
+	if (!philos)
+		return (NULL);
+	array_index = 0;
+	while (array_index < nb_of_philos)
 	{
-		memset(&philos[index], 0, sizeof(t_philo));
-		if (philos[index + 1].id == -1)
-		{
-			philos[index].id = index + 1;
-			philos[index].right_fork = &philos[0].philo_fork;
-			pthread_mutex_init(&philos[index].philo_fork, NULL);
-			break ;
-		}
-		pthread_mutex_init(&philos[index].philo_fork, NULL);
-		philos[index].last_meal = starttime;
-		philos[index].id = index + 1;
-		philos[index].right_fork = &philos[index + 1].philo_fork;
-		index++;
+		instantiation_philo_struct(&philos[array_index],
+			&philos[(array_index + 1) % nb_of_philos].philo_fork);
+		array_index++;
 	}
 	return (philos);
 }
 
-void	*routine(void *args)
+int	instantiation_manager_struct(char **av, t_manager *manager)
 {
-	t_philo *philo;
-	struct timeval tv;
-	long int time;
-
-	philo = (t_philo *)args;
-	pthread_mutex_lock(philo->right_fork)
-	if (!gettimeofday(&tv, NULL))
-		time = ((tv.tv_sec * 1e3) + (tv.tv_usec / 1e3)); 
-	printf("%ld %d has taken a fork", time, philo->id);
-	pthread_mutex_lock(&philo->philo_fork);
-	printf("%ld %d has taken a fork", time, philo->id);
-	printf("%ld %d is eating", time, philo->id);
-	usleep();
+	manager->data = instantiation_data_struct(av);
+	if (!manager->data)
+		return (instantiation_struct_err_msg());
+	manager->philos = instantiation_array_philos(manager->data->nb_of_philos);
+	if (!manager->philos)
+		return (instantiation_struct_err_msg());
+	print_data(manager->data);
+	print_array_philo(manager->philos, manager->data->nb_of_philos);
+	return (EXIT_SUCCESS);
 }
 
-void	print_actions(t_philo philo)
+// Start dinner simulation
+int	start_simulation(t_manager *manager)
 {
-	static long int	time;
-
-	printf("%d has taken a fork", philo.id);
-	printf("%d is eating", philo.id);
-	printf("%d is sleeping", philo.id);
-	printf("%d is thinking", philo.id);
-	printf("%d is dead", philo.id);
+	if (!manager)
+		return (EXIT_FAILURE);
+	destroying_structs(manager);
+	return (EXIT_SUCCESS);
 }
-
-void	print_matrix_of_philos(t_philo *arr_philos)
-{
-	int 	i;
-
-	i = 0;
-	while (arr_philos[i].id != -1)
-	{
-		printf("id dos philos %d\n", arr_philos[i].id);
-		printf("addr philo fork %p\n", (void *) &arr_philos[i].philo_fork);
-		printf("addr right fork %p\n", (void *) arr_philos[i].right_fork);
-		i++;
-	}
-	return ;
-}
-
-// number_of_philosophers: A quantidade de filósofos é a mesma quantidade de garfos
-// time_to_die (in milliseconds): É o tempo no qual ele ficar sem comer ele morrerá, sendo o tempo contado
-// a partir da última refeição ou do início da simulação.
-// time_to_eat (in milliseconds): É o tempo no qual os filósofos levam para comer, durante este tempo
-// eles devem segurar dois garfos.
-// time_to_sleep (in milliseconds): É o tempo que será gasto dormindo.
-// number_of_times_each_philosopher_must_eat: Número de vezes que cada filósofo deve comer, completando-a ou algum filósofo 
-// morrendo a simulação se encerra.
-void	instantiation_struct(int ac, char **av)
-{
-	struct timeval	tv;
-	t_manager		manager;
-
-	memset(&data, 0, sizeof(t_data));
-	manager.philos = instantiation_philo(ft_atoui(av[1]));
-	print_matrix_of_philos(manager.philos);
-	manager.time_to_die_in_us = (ft_atoui(av[2]) * 1e3);
-	manager.time_to_eat_in_us = (ft_atoui(av[3]) * 1e3);
-	manager.time_to_sleep_in_us = (ft_atoui(av[4]) * 1e3);
-	if (gettimeofday(&tv, NULL))
-		return ;
-	manager.start_time = (tv.tv_sec * 1e6) + tv.tv_usec;
-	if (ac == 6)
-		manager.nb_of_times_each_philo_must_eat = ft_atoui(av[5]);
-	else
-		manager.nb_of_times_each_philo_must_eat = -1;
-	return ;
-}
-
-int		dead(void)
-{
-	static int	dead;
-
-	dead = 0;
-}
-
-void	manager_routine(t_manager *manager)
-{
-	struct timeval	tv;
-	long int		time;
-
-	while (1)
-	{
-
-	}
-}
-
-// Como calcular o tempo de execução dos filósofos?
-// Pela diferença no tempo perante o valor inical.
 
 int	main(int ac, char **av)
 {
-	if (validation_of_paramters(ac, av))
-		return (1);
-	instantiation_struct(ac, av);
-	return (0);
+	t_manager	manager;
+
+	if (arg_validation(ac, av))
+		return (EXIT_FAILURE);
+	if (instantiation_manager_struct(av, &manager))
+		return (EXIT_FAILURE);
+	if (start_simulation(&manager))
+		return (EXIT_FAILURE);
+	return (EXIT_SUCCESS);
 }

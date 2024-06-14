@@ -32,30 +32,39 @@
 // pthread_mutex_destroy,  pthread_mutex_lock, pthread_mutex_unlock
 #include <pthread.h>
 
-// Types
-# include <stdbool.h>
+#define TRUE 1
+#define FALSE 0
+
+enum e_error {
+	NOERROR,
+	EPERM,
+	EAGAIN = 11,
+	ENOMEM = 12,
+	EBUSY = 16,
+	EINVAL = 22,
+};
 
 typedef struct s_philo {
-	unsigned int		id;
+	long int			id;
 	long int			last_meal;
 	pthread_mutex_t		*right_fork;
 	pthread_mutex_t		philo_fork;
-	t_data				*data;
 }	t_philo;
 
-typedef struct s_data {
-	long int	time_to_die_in_us;
-	long int	time_to_eat_in_us;
-	long int	time_to_sleep_in_us;
-	long int	nb_of_times_each_philo_must_eat;
-	long int	start_time;
-} 	t_data;
 
 // Coloco o tempo para microsegundos pois a função usleep utiliza-se microsegundos.
+typedef struct s_data {
+	long int	nb_of_philos;
+	long int	time_to_die_in_ms;
+	long int	time_to_eat_in_ms;
+	long int	time_to_sleep_in_ms;
+	long int	nb_of_times_each_philo_must_eat;
+	long int	timestamp_of_simulation;
+}   t_data;
+
 typedef struct s_manager {
 	t_philo	*philos;
 	t_data	*data;
-}   t_manager;
-
+} t_manager;
 
 #endif
