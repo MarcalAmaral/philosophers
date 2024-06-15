@@ -9,5 +9,6 @@ int main(void)
     printf("error message EBUSY %s\n", strerror(EBUSY));
     printf("error message EPERM %s\n", strerror(EPERM));
     printf("error message EAGAIN %s\n", strerror(EAGAIN));
+    printf("error message ESRCH %s\n", strerror(ESRCH));
     return (0);
 }

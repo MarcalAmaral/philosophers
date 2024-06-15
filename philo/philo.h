@@ -35,9 +35,24 @@
 #define TRUE 1
 #define FALSE 0
 
+enum e_actions {
+	TAKEN_FORK,
+	EATING,
+	SLEEPING,
+	THINKING,
+	DIED
+};
+
+enum e_unit_time {
+	SECONDS,
+	MILLISECONDS,
+	MICROSECONDS,
+};
+
 enum e_error {
 	NOERROR,
 	EPERM,
+	ESRCH = 3,
 	EAGAIN = 11,
 	ENOMEM = 12,
 	EBUSY = 16,
@@ -47,6 +62,7 @@ enum e_error {
 typedef struct s_philo {
 	long int			id;
 	long int			last_meal;
+	pthread_t			philo;
 	pthread_mutex_t		*right_fork;
 	pthread_mutex_t		philo_fork;
 }	t_philo;
