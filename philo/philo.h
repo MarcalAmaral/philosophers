@@ -46,7 +46,7 @@ enum e_actions {
 enum e_unit_time {
 	SECONDS,
 	MILLISECONDS,
-	MICROSECONDS,
+	MICROSECONDS
 };
 
 enum e_error {
@@ -59,7 +59,18 @@ enum e_error {
 	EINVAL = 22,
 };
 
+// Coloco o tempo para microsegundos pois a função usleep utiliza-se microsegundos.
+typedef struct s_data {
+	long int	nb_of_philos;
+	long int	time_to_die_in_ms;
+	long int	time_to_eat_in_us;
+	long int	time_to_sleep_in_us;
+	long int	nb_of_times_each_philo_must_eat;
+	long int	timestamp_of_simulation;
+}   t_data;
+
 typedef struct s_philo {
+	t_data				**data;
 	long int			id;
 	long int			last_meal;
 	pthread_t			philo;
@@ -67,20 +78,10 @@ typedef struct s_philo {
 	pthread_mutex_t		philo_fork;
 }	t_philo;
 
-
-// Coloco o tempo para microsegundos pois a função usleep utiliza-se microsegundos.
-typedef struct s_data {
-	long int	nb_of_philos;
-	long int	time_to_die_in_ms;
-	long int	time_to_eat_in_ms;
-	long int	time_to_sleep_in_ms;
-	long int	nb_of_times_each_philo_must_eat;
-	long int	timestamp_of_simulation;
-}   t_data;
-
 typedef struct s_manager {
-	t_philo	*philos;
-	t_data	*data;
+	pthread_t	monitor;
+	t_philo		*philos;
+	t_data		*data;
 } t_manager;
 
 #endif

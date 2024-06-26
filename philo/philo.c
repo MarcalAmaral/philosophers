@@ -17,6 +17,43 @@
 // sophers must eat].
 // exclude argument of filename bin, we have 4 (ac == 5) arguments or 5 (ac == 6). 
 
+int	ft_strlen(const char *string)
+{
+	int counter;
+
+	counter = 0;
+	if (!string)
+		return (counter);
+	while (string[counter])
+		counter++;
+	return (counter);	
+}
+
+// format string
+char	*format_string(const char *s, const char *s1, const char *s2, const char *s3)
+{
+	int		lenght;
+	int		index;
+	char	*formatted_string;
+
+	lenght = (ft_strlen(s) + ft_strlen(s1) + ft_strlen(s2) + ft_strlen(s3));
+	formatted_string = malloc((lenght + 1) * sizeof(char));
+	formatted_string[lenght] = '\0';
+	lenght = 0;
+	index = 0;
+	while (s[index])
+		formatted_string[lenght++] = s[index++];
+	index = 0;
+	while (s1[index])
+		formatted_string[lenght++] = s1[index++];
+	index = 0;
+	while (s2[index])
+		formatted_string[lenght++] = s2[index++];
+	index = 0;
+	while (s3[index])
+		formatted_string[lenght++] = s3[index++];
+	return (formatted_string);
+}
 
 // Argument validation
 int	ft_isdigit(char c)
@@ -26,23 +63,26 @@ int	ft_isdigit(char c)
 	return (FALSE);
 }
 
-void	write_err(const char *string)
+void	write_stderr(const char *string)
 {
 	if (!string)
 		return ;
-	while (*string)
-		string += write(STDERR_FILENO, string, 1);
+	write(STDERR_FILENO, string, ft_strlen(string));
 }
 
 int	arg_err_msg(int type, const char *arg)
 {
+	char *str_error;
+
+	str_error = "";
 	if (type == ('a' + 'c'))
-		write_err("Error\n philosophers: invalid number of args\n");
+		write_stderr("Error\n philosophers: invalid number of args\n");
 	else if (type == ('a' + 'v'))
 	{
-		write_err("Error\n philosophers: (");
-		write_err(arg);
-		write_err("): invalid argument, the program receives only digits\n");
+		str_error = format_string("Error\n philosophers: (", arg,
+			"): invalid argument, the program receives only digits\n", "");
+		write_stderr(str_error);
+		free(str_error);
 	}
 	return (EXIT_FAILURE);
 }
@@ -120,36 +160,44 @@ char	*ft_litoa(long int num)
 void	err_msg_mutex_init(enum e_error error, long int id)
 {
 	char	*str_id;
+	char	*str_error;
+	char	*str_error_type;
 
-	str_id = ft_itoa(id);
-	write_err("Occur an error when destroy thread of id: (");
-	write_err(str_id);
+	str_error_type = "";
+	str_id = ft_litoa(id);
 	if (error == EAGAIN)
-		write_err("): Resource temporarily unavailable\n");
+		str_error_type = "): Resource temporarily unavailable\n";
 	else if (error == ENOMEM)
-		write_err("): Cannot allocate memory\n");
+		str_error_type = "): Cannot allocate memory\n";
 	else if (error == EPERM)
-		write_err("): Operation not permitted\n");
+		str_error_type = "): Operation not permitted\n";
 	else if (error == EBUSY)
-		write_err("): Device or resource busy\n");
+		str_error_type = "): Device or resource busy\n";
 	else if (error == EINVAL)
-		write_err("): Invalid argument\n");
+		str_error_type = "): Invalid argument\n";
+	str_error = format_string("Occur an error when destroy thread of id: (", str_id, str_error_type, "");
+	write_stderr(str_error);
 	free(str_id);
+	free(str_error);
 	return ;
 }
 
 int	err_msg_mutex_destroy(enum e_error error, long int id)
 {
 	char	*str_id;
+	char	*str_error;
+	char	*str_error_type;
 
-	str_id = ft_itoa(id);
-	write_err("Occur an error when destroy thread of id: (");
-	write_err(str_id);
+	str_error_type = "";
+	str_id = ft_litoa(id);
 	if (error == EBUSY)
-		write_err("): Device or resource busy\n");
+		str_error_type = "): Device or resource busy\n";
 	else if (error == EINVAL)
-		write_err("): Invalid argument\n");
+		str_error_type = "): Invalid argument\n";
+	str_error = format_string("Occur an error when destroy thread of id: (", str_id, str_error_type, "");
+	write_stderr(str_error);
 	free(str_id);
+	free(str_error);
 	return (NOERROR);
 }
 
@@ -161,6 +209,7 @@ void	destroying_structs(t_manager *manager)
 	array_index = 0;
 	while (array_index < manager->data->nb_of_philos)
 	{
+		free(manager->philos[array_index].data);
 		error = pthread_mutex_destroy(&manager->philos[array_index].philo_fork);
 		if (error != NOERROR)
 			error = err_msg_mutex_destroy(error, manager->philos[array_index].id);
@@ -189,8 +238,8 @@ void	print_data(t_data *data)
 {
 	printf("quantity of philosophers: %ld\n", data->nb_of_philos);
 	printf("time to die in milliseconds: %ld\n", data->time_to_die_in_ms);
-	printf("time to eat in milliseconds: %ld\n", data->time_to_eat_in_ms);
-	printf("time to sleep in milliseconds: %ld\n", data->time_to_sleep_in_ms);
+	printf("time to eat in microseconds: %ld\n", data->time_to_eat_in_us);
+	printf("time to sleep in microseconds: %ld\n", data->time_to_sleep_in_us);
 	printf("quantity of times each philosopher must eat: %ld\n", data->nb_of_times_each_philo_must_eat);
 	printf("timestamp of simulation: %ld\n", data->timestamp_of_simulation);
 	return ;
@@ -212,7 +261,7 @@ long int	ft_atoli(const char *nptr)
 
 int	instantiation_struct_err_msg(void)
 {
-	write_err("Cannot allocate memory\n");
+	write_stderr("Cannot allocate memory\n");
 	return (EXIT_FAILURE);
 }
 
@@ -225,8 +274,8 @@ t_data	*instantiation_data_struct(char **av)
 		return (NULL);
 	data->nb_of_philos = ft_atoli(av[1]);
 	data->time_to_die_in_ms = ft_atoli(av[2]);
-	data->time_to_eat_in_ms = ft_atoli(av[3]);
-	data->time_to_sleep_in_ms = ft_atoli(av[4]);
+	data->time_to_eat_in_us = (ft_atoli(av[3]) * 1e3);
+	data->time_to_sleep_in_us = (ft_atoli(av[4]) * 1e3);
 	data->nb_of_times_each_philo_must_eat = -1;
 	if (av[5] != NULL)
 		data->nb_of_times_each_philo_must_eat = ft_atoli(av[5]);
@@ -234,13 +283,15 @@ t_data	*instantiation_data_struct(char **av)
 	return (data);
 }
 
-void	instantiation_philo_struct(t_philo *philo, pthread_mutex_t *right_fork)
+void	instantiation_philo_struct(t_philo *philo, pthread_mutex_t *right_fork, t_data *data)
 {
 	static int		id;
 	enum e_error	error;
 
 	philo->id = id;
 	philo->last_meal = 0;
+	philo->data = malloc(1 * sizeof(t_data **));
+	*philo->data = data;
 	error = pthread_mutex_init(&philo->philo_fork, NULL);
 	if (error != NOERROR)
 		err_msg_mutex_init(error, philo->id);
@@ -248,7 +299,7 @@ void	instantiation_philo_struct(t_philo *philo, pthread_mutex_t *right_fork)
 	id++;
 }
 
-t_philo	*instantiation_array_philos(long int nb_of_philos)
+t_philo	*instantiation_array_philos(long int nb_of_philos, t_data *data)
 {
 	t_philo	*philos;
 	int		array_index;
@@ -260,7 +311,7 @@ t_philo	*instantiation_array_philos(long int nb_of_philos)
 	while (array_index < nb_of_philos)
 	{
 		instantiation_philo_struct(&philos[array_index],
-			&philos[(array_index + 1) % nb_of_philos].philo_fork);
+			&philos[(array_index + 1) % nb_of_philos].philo_fork, data);
 		array_index++;
 	}
 	return (philos);
@@ -271,11 +322,12 @@ int	instantiation_manager_struct(char **av, t_manager *manager)
 	manager->data = instantiation_data_struct(av);
 	if (!manager->data)
 		return (instantiation_struct_err_msg());
-	manager->philos = instantiation_array_philos(manager->data->nb_of_philos);
+	manager->philos = instantiation_array_philos(manager->data->nb_of_philos, manager->data);
 	if (!manager->philos)
 		return (instantiation_struct_err_msg());
-	print_data(manager->data);
-	print_array_philo(manager->philos, manager->data->nb_of_philos);
+	// print_data(manager->data);
+	// print_array_philo(manager->philos, manager->data->nb_of_philos);
+	// destroying_structs(manager);
 	return (EXIT_SUCCESS);
 }
 
@@ -293,22 +345,26 @@ long int	get_current_timestamp(enum e_unit_time unit)
 		else if (unit == MICROSECONDS)
 			return (((tv.tv_sec * 1e6) + tv.tv_usec));
 	}
-	write_err("An error occurred when get current timestamp\n");
+	write_stderr("An error occurred when get current timestamp\n");
 	return (EXIT_FAILURE);
 }
 
 int	err_msg_detach_thread(enum e_error error, long int id, t_manager *manager)
 {
 	char	*str_id;
+	char 	*str_error;
+	char	*str_error_type;
 
-	str_id = ft_itoa(id);
-	write_err("An error occurred when detach thread of id: (");
-	write_err(str_id);
+	str_error_type = "";
+	str_id = ft_litoa(id);
 	if (error == EINVAL)
-		write_err("): Is not a joinable thread\n");
+		str_error_type = "): Is not a joinable thread\n";
 	else if (error == ESRCH)
-		write_err("): No thread with the ID thread could be found\n");
+		str_error_type = "): No thread with the ID thread could be found\n";
+	str_error = format_string("An error occurred when detach thread of id: (", str_id, str_error_type, "");
+	write_stderr(str_error);
 	free(str_id);
+	free(str_error);
 	destroying_structs(manager);
 	return (EXIT_FAILURE);
 }
@@ -316,18 +372,22 @@ int	err_msg_detach_thread(enum e_error error, long int id, t_manager *manager)
 int	err_msg_create_thread(enum e_error error, long int id, t_manager *manager)
 {
 	char	*str_id;
+	char 	*str_error;
+	char	*str_error_type;
 
-	str_id = ft_itoa(id);
-	write_err("An error occurred when create thread of id: (");
-	write_err(str_id);
+	str_error_type = "";
+	str_id = ft_litoa(id);
 	if (error == EAGAIN)
-		write_err("): Resource temporarily unavailable\n");
+		str_error_type = "): Resource temporarily unavailable\n";
 	else if (error == EINVAL)
-		write_err("): Invalid settings in attr\n");
+		str_error_type = "): Invalid settings in attr\n";
 	else if (error == EPERM)
-		write_err("): No permission to set the scheduling \
-policy and parameters specified in attr\n");
+		str_error_type = "): No permission to set the scheduling \
+policy and parameters specified in attr\n";
+	str_error = format_string("An error occurred when create thread of id: (", str_id, str_error_type, "");
+	write_stderr(str_error);
 	free(str_id);
+	free(str_error);
 	destroying_structs(manager);
 	return (EXIT_FAILURE);
 }
@@ -336,23 +396,58 @@ void	write_stdout(const char *string)
 {
 	if (!string)
 		return ;
-	while (*string)
-		string += write(STDOUT_FILENO, string, 1);
+	write(STDOUT_FILENO, string, ft_strlen(string));
+}
+
+void	write_act_msg(enum e_actions action, long int philo_id, long int current_timestamp_ms)
+{
+	char	*str_current_timestamp_ms;
+	char	*str_philo_id;
+	char	*str_philo_act;
+	char	*str_formatted;
+
+	str_philo_act = "";
+	str_current_timestamp_ms = ft_litoa(current_timestamp_ms);
+	str_philo_id = ft_litoa(philo_id);
+	if (action == TAKEN_FORK)
+		str_philo_act = " has taken a fork\n";
+	else if (action == EATING)
+		str_philo_act = " is eating\n";
+	else if (action == SLEEPING)
+		str_philo_act = " is sleeping\n";
+	else if (action == THINKING)
+		str_philo_act = " is thinking\n";
+	else if (action == DIED)
+		str_philo_act = " died\n";
+	str_formatted = format_string(str_current_timestamp_ms, " ", str_philo_id, str_philo_act);
+	write_stdout(str_formatted);
+	free(str_formatted);
+	free(str_current_timestamp_ms);
+	free(str_philo_id);
 	return ;
 }
 
-void	write_act_msg(enum e_actions action)
+void	eat(t_philo *info_philo)
 {
-	write_stdout()
-}
+	long int current_timestamp_in_ms;
 
-void	eat(void)
-{
+	pthread_mutex_lock(info_philo->right_fork);
+	current_timestamp_in_ms = get_current_timestamp(MILLISECONDS);
+	write_act_msg(TAKEN_FORK, info_philo->id, current_timestamp_in_ms);
+	pthread_mutex_lock(&info_philo->philo_fork);
+	current_timestamp_in_ms = get_current_timestamp(MILLISECONDS);
+	write_act_msg(TAKEN_FORK, info_philo->id, current_timestamp_in_ms);
+	write_act_msg(EATING, info_philo->id, current_timestamp_in_ms);
+	info_philo->last_meal = current_timestamp_in_ms;
+	usleep(info_philo->data[0]->time_to_eat_in_us);
+	pthread_mutex_unlock(info_philo->right_fork);
+	pthread_mutex_unlock(&info_philo->philo_fork);
 	return ;
 }
 
 void	thinking(void)
 {
+
 	return ;
 }
 
@@ -362,14 +457,47 @@ void	*dinner_routine(void *arg)
 
 	info = (t_philo *) arg;
 	if ((info->id % 2) == 0)
-		usleep(50);
+		usleep(500);
 	while (TRUE)
 	{
-		eat();
-		usleep();
-		thinking();
+		eat(info);
+		write_act_msg(SLEEPING, info->id, get_current_timestamp(MILLISECONDS));
+		usleep(info->data[0]->time_to_sleep_in_us);
+		write_act_msg(THINKING, info->id, get_current_timestamp(MILLISECONDS));
 	}
+	return (NULL);
+}
 
+void	*monitor_routine(void *arg)
+{
+	t_manager	*manager_info;
+	long int	current_timestamp;
+	long int	iteration;
+	long int	time_for_another_check;
+	int			simulation_state;
+
+	manager_info = (t_manager *) arg;
+	time_for_another_check = ((manager_info->data->time_to_die_in_ms - 10) * 1e3);
+	simulation_state = TRUE;
+	while (TRUE)
+	{
+		current_timestamp = get_current_timestamp(MILLISECONDS);
+		iteration = 0;
+		while (iteration < manager_info->data->nb_of_philos)
+		{
+			if ((current_timestamp - manager_info->philos[iteration].last_meal) > manager_info->data->time_to_die_in_ms)
+			{
+				write_act_msg(DIED, manager_info->philos[iteration].id, current_timestamp);
+				simulation_state = FALSE;
+				break ;
+			}
+			iteration++;
+		}
+		if (simulation_state == FALSE)
+			break ;
+		usleep(time_for_another_check);
+	}
+	return (NULL);
 }
 
 int	start_simulation(t_manager *manager)
@@ -394,6 +522,10 @@ int	start_simulation(t_manager *manager)
 			return (err_msg_detach_thread(error, manager->philos[array_index].id, manager));
 		array_index++;
 	}
+	error = pthread_create(&manager->monitor, NULL, &monitor_routine, manager);
+	if (error != NOERROR)
+		return (err_msg_create_thread(error, -1, manager));
+	pthread_join(manager->monitor, NULL);
 	destroying_structs(manager);
 	return (EXIT_SUCCESS);
 }
