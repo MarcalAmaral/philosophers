@@ -57,25 +57,27 @@ enum e_error {
 	ENOMEM = 12,
 	EBUSY = 16,
 	EINVAL = 22,
+	EDEADLK = 36
 };
 
 // Coloco o tempo para microsegundos pois a função usleep utiliza-se microsegundos.
 typedef struct s_data {
-	long int	nb_of_philos;
-	long int	time_to_die_in_ms;
-	long int	time_to_eat_in_us;
-	long int	time_to_sleep_in_us;
-	long int	nb_of_times_each_philo_must_eat;
-	long int	timestamp_of_simulation;
+	long int			nb_of_philos;
+	_Atomic long int	time_to_die_in_ms;
+	_Atomic long int	time_to_eat_in_us;
+	_Atomic long int	time_to_sleep_in_us;
+	_Atomic long int	nb_of_times_each_philo_must_eat;
+	_Atomic long int	timestamp_of_simulation;
+	_Atomic long int	state_of_simulation;
 }   t_data;
 
 typedef struct s_philo {
 	t_data				**data;
 	long int			id;
-	long int			last_meal;
 	pthread_t			philo;
 	pthread_mutex_t		*right_fork;
 	pthread_mutex_t		philo_fork;
+	_Atomic long int	last_meal;
 }	t_philo;
 
 typedef struct s_manager {

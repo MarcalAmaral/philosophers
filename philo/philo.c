@@ -325,9 +325,6 @@ int	instantiation_manager_struct(char **av, t_manager *manager)
 	manager->philos = instantiation_array_philos(manager->data->nb_of_philos, manager->data);
 	if (!manager->philos)
 		return (instantiation_struct_err_msg());
-	// print_data(manager->data);
-	// print_array_philo(manager->philos, manager->data->nb_of_philos);
-	// destroying_structs(manager);
 	return (EXIT_SUCCESS);
 }
 
@@ -369,6 +366,28 @@ int	err_msg_detach_thread(enum e_error error, long int id, t_manager *manager)
 	return (EXIT_FAILURE);
 }
 
+int	err_msg_join_thread(enum e_error error, long int id, t_manager *manager)
+{
+	char	*str_id;
+	char	*str_error;
+	char	*str_error_type;
+
+	str_error_type = "";
+	str_id = ft_litoa(id);
+	if (error == ESRCH)
+		str_error_type = "): No thread with the ID thread could be found\n";
+	else if (error == EINVAL)
+		str_error_type = "): thread is not a joinable thread or another thread is already waiting to join with this thread\n";
+	else if (error == EDEADLK)
+		str_error_type = "): A deadlock was detected (e.g., two threads tried to join with each other); or thread specifies the calling thread.\n";
+	str_error = format_string("An error occurred when join thread of id: (", str_id, str_error_type, "");
+	write_stderr(str_error);
+	free(str_id);
+	free(str_error);
+	destroying_structs(manager);
+	return (EXIT_FAILURE);
+}
+
 int	err_msg_create_thread(enum e_error error, long int id, t_manager *manager)
 {
 	char	*str_id;
@@ -399,16 +418,18 @@ void	write_stdout(const char *string)
 	write(STDOUT_FILENO, string, ft_strlen(string));
 }
 
-void	write_act_msg(enum e_actions action, long int philo_id, long int current_timestamp_ms)
+int	write_act_msg(enum e_actions action, t_philo *philo)
 {
-	char	*str_current_timestamp_ms;
+	char	*timestamp_start_of_simulation;
 	char	*str_philo_id;
 	char	*str_philo_act;
 	char	*str_formatted;
 
+	if (!philo->data[0]->state_of_simulation)
+		return (EXIT_FAILURE);
 	str_philo_act = "";
-	str_current_timestamp_ms = ft_litoa(current_timestamp_ms);
-	str_philo_id = ft_litoa(philo_id);
+	timestamp_start_of_simulation = ft_litoa(get_current_timestamp(MILLISECONDS) - philo->data[0]->timestamp_of_simulation);
+	str_philo_id = ft_litoa(philo->id);
 	if (action == TAKEN_FORK)
 		str_philo_act = " has taken a fork\n";
 	else if (action == EATING)
@@ -419,36 +440,45 @@ void	write_act_msg(enum e_actions action, long int philo_id, long int current_ti
 		str_philo_act = " is thinking\n";
 	else if (action == DIED)
 		str_philo_act = " died\n";
-	str_formatted = format_string(str_current_timestamp_ms, " ", str_philo_id, str_philo_act);
+	str_formatted = format_string(timestamp_start_of_simulation, " ", str_philo_id, str_philo_act);
 	write_stdout(str_formatted);
 	free(str_formatted);
-	free(str_current_timestamp_ms);
+	free(timestamp_start_of_simulation);
 	free(str_philo_id);
-	return ;
+	return (EXIT_SUCCESS);
 }
 
-void	eat(t_philo *info_philo)
+int	eat(t_philo *info_philo)
 {
 	long int current_timestamp_in_ms;
 
 	pthread_mutex_lock(info_philo->right_fork);
 	current_timestamp_in_ms = get_current_timestamp(MILLISECONDS);
-	write_act_msg(TAKEN_FORK, info_philo->id, current_timestamp_in_ms);
+	if (write_act_msg(TAKEN_FORK, info_philo))
+	{
+		pthread_mutex_unlock(info_philo->right_fork);
+		return (EXIT_FAILURE);
+	}
 	pthread_mutex_lock(&info_philo->philo_fork);
 	current_timestamp_in_ms = get_current_timestamp(MILLISECONDS);
-	write_act_msg(TAKEN_FORK, info_philo->id, current_timestamp_in_ms);
-	write_act_msg(EATING, info_philo->id, current_timestamp_in_ms);
+	if (write_act_msg(TAKEN_FORK, info_philo))
+	{
+		pthread_mutex_unlock(info_philo->right_fork);
+		pthread_mutex_unlock(&info_philo->philo_fork);
+		return (EXIT_FAILURE);
+	}
+	if (write_act_msg(EATING, info_philo))
+	{
+		pthread_mutex_unlock(info_philo->right_fork);
+		pthread_mutex_unlock(&info_philo->philo_fork);
+		return (EXIT_FAILURE);
+	}
 	info_philo->last_meal = current_timestamp_in_ms;
-	usleep(info_philo->data[0]->time_to_eat_in_us);
+	if (info_philo->data[0]->state_of_simulation)
+		usleep(info_philo->data[0]->time_to_eat_in_us);
 	pthread_mutex_unlock(info_philo->right_fork);
 	pthread_mutex_unlock(&info_philo->philo_fork);
-	return ;
-}
-
-void	thinking(void)
-{
-
-	return ;
+	return (EXIT_SUCCESS);
 }
 
 void	*dinner_routine(void *arg)
@@ -460,10 +490,14 @@ void	*dinner_routine(void *arg)
 		usleep(500);
 	while (TRUE)
 	{
-		eat(info);
-		write_act_msg(SLEEPING, info->id, get_current_timestamp(MILLISECONDS));
-		usleep(info->data[0]->time_to_sleep_in_us);
-		write_act_msg(THINKING, info->id, get_current_timestamp(MILLISECONDS));
+		if (eat(info))
+			return (NULL);
+		if (write_act_msg(SLEEPING, info))
+			return (NULL);
+		if (info->data[0]->state_of_simulation)
+			usleep(info->data[0]->time_to_sleep_in_us);
+		if (write_act_msg(THINKING, info))
+			return (NULL);
 	}
 	return (NULL);
 }
@@ -473,29 +507,22 @@ void	*monitor_routine(void *arg)
 	t_manager	*manager_info;
 	long int	current_timestamp;
 	long int	iteration;
-	long int	time_for_another_check;
-	int			simulation_state;
 
 	manager_info = (t_manager *) arg;
-	time_for_another_check = ((manager_info->data->time_to_die_in_ms - 10) * 1e3);
-	simulation_state = TRUE;
-	while (TRUE)
+	while (manager_info->data[0].state_of_simulation)
 	{
-		current_timestamp = get_current_timestamp(MILLISECONDS);
 		iteration = 0;
+		current_timestamp = get_current_timestamp(MILLISECONDS);
 		while (iteration < manager_info->data->nb_of_philos)
 		{
 			if ((current_timestamp - manager_info->philos[iteration].last_meal) > manager_info->data->time_to_die_in_ms)
 			{
-				write_act_msg(DIED, manager_info->philos[iteration].id, current_timestamp);
-				simulation_state = FALSE;
+				write_act_msg(DIED, &manager_info->philos[iteration]);
+				manager_info->data[0].state_of_simulation = FALSE;
 				break ;
 			}
 			iteration++;
 		}
-		if (simulation_state == FALSE)
-			break ;
-		usleep(time_for_another_check);
 	}
 	return (NULL);
 }
@@ -510,6 +537,7 @@ int	start_simulation(t_manager *manager)
 		return (EXIT_FAILURE);
 	array_index = 0;
 	current_timestamp = get_current_timestamp(MILLISECONDS);
+	manager->data->state_of_simulation = TRUE;
 	manager->data->timestamp_of_simulation = current_timestamp;
 	while (array_index < manager->data->nb_of_philos)
 	{
@@ -517,14 +545,19 @@ int	start_simulation(t_manager *manager)
 		error = pthread_create(&manager->philos[array_index].philo, NULL, &dinner_routine, &manager->philos[array_index]);
 		if (error != NOERROR)
 			return (err_msg_create_thread(error, manager->philos[array_index].id, manager));
-		error = pthread_detach(manager->philos[array_index].philo);
-		if (error != NOERROR)
-			return (err_msg_detach_thread(error, manager->philos[array_index].id, manager));
 		array_index++;
 	}
 	error = pthread_create(&manager->monitor, NULL, &monitor_routine, manager);
 	if (error != NOERROR)
 		return (err_msg_create_thread(error, -1, manager));
+	array_index = 0;
+	while (array_index < manager->data->nb_of_philos)
+	{
+		error = pthread_join(manager->philos[array_index].philo, NULL);
+		if (error != NOERROR)
+			return (err_msg_join_thread(error, manager->philos[array_index].id, manager));
+		array_index++;
+	}
 	pthread_join(manager->monitor, NULL);
 	destroying_structs(manager);
 	return (EXIT_SUCCESS);
