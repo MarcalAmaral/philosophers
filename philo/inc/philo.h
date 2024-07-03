@@ -75,6 +75,7 @@ typedef struct s_philo {
 	t_data				**data;
 	long int			id;
 	pthread_t			philo;
+	_Atomic int			satisfied;
 	pthread_mutex_t		*right_fork;
 	pthread_mutex_t		philo_fork;
 	_Atomic long int	last_meal;
@@ -85,5 +86,32 @@ typedef struct s_manager {
 	t_philo		*philos;
 	t_data		*data;
 } t_manager;
+
+// Argument validation
+int			arg_validation(int ac, char **av);
+
+// Instatiation and deallocating structures
+int			instantiation_manager_struct(char **av, t_manager *manager);
+void		deallocating_structures(t_manager *manager);
+
+// Error messages
+int			err_msg_mutex_destroy(enum e_error error, long int id);
+int			err_msg_detach_thread(enum e_error error, long int id, t_manager *manager);
+int			err_msg_join_thread(enum e_error error, long int id, t_manager *manager);
+int			err_msg_create_thread(enum e_error error, long int id, t_manager *manager);
+void		err_msg_mutex_init(enum e_error error, long int id);
+
+// Libft functions
+int			ft_strlen(const char *string);
+char		*ft_litoa(long int num);
+void		ft_putstr_fd(const char *string, int fd);
+long int	ft_atoli(const char *nptr);
+
+// Utilities
+char		*format_string(const char *s, const char *s1, const char *s2, const char *s3);
+long int	get_current_timestamp(enum e_unit_time unit);
+
+// Dinner simulation
+int			start_simulation(t_manager *manager);
 
 #endif
