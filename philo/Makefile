@@ -10,11 +10,6 @@ SLEEP := sleep 0.2
 
 # colors #
 DEFAULT=\033[39m
-BLACK=\033[30m
-ORANGE=\033[93m
-BLUE=\033[94m
-WHITE=\033[97m
-RESET=\033[0m
 RESET_TERM=\r\033[K
 
 # messages #
@@ -42,7 +37,7 @@ HEADERS = $(addprefix $(INC)/, philo.h)
 # files mandatory #
 CFILES = philo.c
 CFILES += $(addprefix $(SRC)/, arg_validation.c deallocating_structures.c error_messages.c instantiation_of_structures.c \
-			libft_functions.c routines.c utils.c)
+			libft_functions.c start_simulation.c utils.c dinner_routine_utils.c monitor_routine.c dinner_routine.c)
 
 VAL = valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file=valgrind-out.txt
 VAL_TXT = valgrind-out.txt
@@ -63,31 +58,31 @@ endef
 define compile
 	$(CC) -o $(NAME) $(CFLAGS) $(LFLAGS) $(CCPFLAGS) $(OBJECT) $(BIN_OBJ) $(FFLAGS)
 	$(SLEEP)
-	printf "\n$(MAGENTA)$(MANDATORY)\n$(RESET)"
+	printf "\n$(MANDATORY)\n"
 endef
 
 define compile_bonus
 	$(CC) -o $(NAME) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(OBJECT) $(BIN_OBJ) $(FFLAGS)
 	$(SLEEP)
-	printf "\n$(MAGENTA)$(MANDATORY)\n$(RESET)"
+	printf "\n$(MANDATORY)\n"
 endef
 
 define compile_source
 	$(eval COUNT=$(shell expr $(COUNT) + 1))
 	$(CC) -o $@ $(CCPFLAGS) $(CFLAGS) $(INCLUDES) -c $<
-	printf "$(RESET_TERM)$(RESET)%d%%  $(BLUE)$(COMP) $(notdir $<) -> $(notdir $@) to $(ORANGE)$(NAME) \r$(RESET)" $$(echo $$(($(COUNT) * 100 / $(words $(OBJECT)))))
+	printf "$(RESET_TERM)%d%%  $(COMP) $(notdir $<) -> $(notdir $@) to $(NAME) \r" $$(echo $$(($(COUNT) * 100 / $(words $(OBJECT)))))
 endef
 
 define clean
 	$(RM) -rf $(OBJ)/ && $(RM) -rf $(VAL_TXT)
 	$(SLEEP)
-	printf "$(RED)$(CLEAN)$(RESET)\n"
+	printf "$(CLEAN)\n"
 endef
 
 define fclean
 	$(call eraseBins)
 	@$(SLEEP)
-	@printf "$(RED)$(FCLEAN)$(RESET)\n"
+	@printf "$(FCLEAN)\n"
 endef
 
 define debug
@@ -99,15 +94,6 @@ endef
 define eraseBins
 	$(if $(NAME),@$(RM) $(NAME))
 	$(if $(BLIBNAME),@$(RM) $(BLIBNAME))
-endef
-
-define help
-	echo -e "${BG_DARK_GREEN}${ORANGE}Available targets:${RESET}"
-	echo -e "${BG_DARK_GREEN}${ORANGE}all:${RESET}${LIGHT_GRAY}Build philo mandatory${RESET}"
-	echo -e "${BG_DARK_GREEN}${ORANGE}re:${RESET}${LIGHT_GRAY}Rebuild the program${RESET}"
-	echo -e "${BG_RED}${ORANGE}clean:${RESET}${LIGHT_GRAY}Remove the object files${RESET}"
-	echo -e "${BG_RED}${ORANGE}fclean:${RESET}${LIGHT_GRAY}Remove the program and the object files${RESET}"
-	echo -e "${BG_BLUE}${ORANGE}debug:${RESET}${LIGHT_GRAY}Build the program with debugging information${RESET}"
 endef
 
 # rules #
@@ -131,15 +117,9 @@ fclean: clean
 
 re: fclean all
 
-bonus:
-	$(call bonus)
-
 debug:
 	$(call debug)
 
-help:
-	$(call help)
-
-.PHONY: all bonus clean fclean re debug help Makefile
+.PHONY: all clean fclean re debug Makefile
 .DEFAULT_GOAL := all
 .SILENT:

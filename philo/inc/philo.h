@@ -14,26 +14,28 @@
 # define PHILO_H
 
 // memset
-#include <string.h>
+# include <string.h>
 
 // printf
-#include <stdio.h>
+# include <stdio.h>
 
 // malloc, free
-#include <stdlib.h>
+# include <stdlib.h>
 
 // write, usleep
-#include <unistd.h>
+# include <unistd.h>
 
 // gettimeofday
-#include <sys/time.h>
+# include <sys/time.h>
 
 // pthread_create, pthread_detach, pthread_join, pthread_mutex_init, 
 // pthread_mutex_destroy,  pthread_mutex_lock, pthread_mutex_unlock
-#include <pthread.h>
+# include <pthread.h>
 
-#define TRUE 1
-#define FALSE 0
+# define TRUE 1
+# define FALSE 0
+
+# define MAX_PHILOS 200
 
 enum e_actions {
 	TAKEN_FORK,
@@ -49,6 +51,11 @@ enum e_unit_time {
 	MICROSECONDS
 };
 
+enum e_procedures {
+	CREATE,
+	JOIN
+};
+
 enum e_error {
 	NOERROR,
 	EPERM,
@@ -60,16 +67,16 @@ enum e_error {
 	EDEADLK = 36
 };
 
-// Coloco o tempo para microsegundos pois a função usleep utiliza-se microsegundos.
 typedef struct s_data {
 	long int			nb_of_philos;
+	long int			state_of_simulation;
+	pthread_mutex_t		state_of_simulation_mutex;
 	_Atomic long int	time_to_die_in_ms;
 	_Atomic long int	time_to_eat_in_us;
 	_Atomic long int	time_to_sleep_in_us;
 	_Atomic long int	nb_of_times_each_philo_must_eat;
 	_Atomic long int	timestamp_of_simulation;
-	_Atomic long int	state_of_simulation;
-}   t_data;
+}	t_data;
 
 typedef struct s_philo {
 	t_data				**data;
@@ -85,7 +92,7 @@ typedef struct s_manager {
 	pthread_t	monitor;
 	t_philo		*philos;
 	t_data		*data;
-} t_manager;
+}	t_manager;
 
 // Argument validation
 int			arg_validation(int ac, char **av);
@@ -96,9 +103,10 @@ void		deallocating_structures(t_manager *manager);
 
 // Error messages
 int			err_msg_mutex_destroy(enum e_error error, long int id);
-int			err_msg_detach_thread(enum e_error error, long int id, t_manager *manager);
-int			err_msg_join_thread(enum e_error error, long int id, t_manager *manager);
-int			err_msg_create_thread(enum e_error error, long int id, t_manager *manager);
+int			err_msg_join_thread(enum e_error error, long int id,
+				t_manager *manager);
+int			err_msg_create_thread(enum e_error error, long int id,
+				t_manager *manager);
 void		err_msg_mutex_init(enum e_error error, long int id);
 
 // Libft functions
@@ -108,10 +116,23 @@ void		ft_putstr_fd(const char *string, int fd);
 long int	ft_atoli(const char *nptr);
 
 // Utilities
-char		*format_string(const char *s, const char *s1, const char *s2, const char *s3);
+int			is_satisfied(t_manager *manager);
+int			write_act_msg(enum e_actions action, t_philo *philo);
+int			consult_state_of_simulation(t_philo *philo);
+char		*format_string(const char *s, const char *s1,
+				const char *s2, const char *s3);
 long int	get_current_timestamp(enum e_unit_time unit);
 
 // Dinner simulation
+void		*dinner_routine(void *arg);
+void		*monitor_routine(void *arg);
 int			start_simulation(t_manager *manager);
+
+// Eat actions and validations
+void		pick_up_first_fork(t_philo *philo);
+void		pick_up_second_fork(t_philo *philo);
+int			first_validation_before_dinner(t_philo *philo);
+int			second_validation_before_dinner(t_philo *philo);
+int			validation_before_eating(t_philo *philo, int *number_of_meals);
 
 #endif

@@ -6,7 +6,7 @@
 /*   By: myokogaw <myokogaw@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/02 22:23:50 by myokogaw          #+#    #+#             */
-/*   Updated: 2024/07/03 01:40:48 by myokogaw         ###   ########.fr       */
+/*   Updated: 2024/07/04 00:15:49 by myokogaw         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,15 +21,16 @@ static int	ft_isdigit(char c)
 
 static int	arg_err_msg(int type, const char *arg)
 {
-	char *str_error;
+	char	*str_error;
 
 	str_error = "";
 	if (type == ('a' + 'c'))
-		ft_putstr_fd("Error\n philosophers: invalid number of args\n", STDERR_FILENO);
+		ft_putstr_fd("Error\n philosophers: invalid number of args\n",
+			STDERR_FILENO);
 	else if (type == ('a' + 'v'))
 	{
 		str_error = format_string("Error\n philosophers: '", arg,
-			"': invalid argument, the program receives only digits\n", "");
+				"': invalid argument, the program receives only digits\n", "");
 		ft_putstr_fd(str_error, STDERR_FILENO);
 		free(str_error);
 	}

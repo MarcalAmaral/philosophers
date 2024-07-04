@@ -6,7 +6,7 @@
 /*   By: myokogaw <myokogaw@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/02 22:36:07 by myokogaw          #+#    #+#             */
-/*   Updated: 2024/07/03 04:33:31 by myokogaw         ###   ########.fr       */
+/*   Updated: 2024/07/04 06:08:57 by myokogaw         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,13 +30,17 @@ static t_data	*instantiation_data_struct(char **av)
 	data->time_to_eat_in_us = (ft_atoli(av[3]) * 1e3);
 	data->time_to_sleep_in_us = (ft_atoli(av[4]) * 1e3);
 	data->nb_of_times_each_philo_must_eat = -1;
+	pthread_mutex_init(&data->state_of_simulation_mutex, NULL);
 	if (av[5] != NULL)
 		data->nb_of_times_each_philo_must_eat = ft_atoli(av[5]);
 	data->timestamp_of_simulation = 0;
+	if (data->nb_of_philos > MAX_PHILOS)
+		data->nb_of_philos = MAX_PHILOS;
 	return (data);
 }
 
-static void	instantiation_philo_struct(t_philo *philo, pthread_mutex_t *right_fork, t_data *data)
+static void	instantiation_philo_struct(t_philo *philo,
+		pthread_mutex_t *right_fork, t_data *data)
 {
 	static int		id = 1;
 	enum e_error	error;
@@ -58,9 +62,10 @@ static t_philo	*instantiation_array_philos(long int nb_of_philos, t_data *data)
 	t_philo	*philos;
 	int		array_index;
 
-	philos = (t_philo *) malloc(nb_of_philos * sizeof(t_philo));
+	philos = (t_philo *) malloc((nb_of_philos + 1) * sizeof(t_philo));
 	if (!philos)
 		return (NULL);
+	memset(philos, 0, ((nb_of_philos + 1) * sizeof(t_philo)));
 	array_index = 0;
 	while (array_index < nb_of_philos)
 	{
@@ -76,7 +81,8 @@ int	instantiation_manager_struct(char **av, t_manager *manager)
 	manager->data = instantiation_data_struct(av);
 	if (!manager->data)
 		return (instantiation_struct_err_msg());
-	manager->philos = instantiation_array_philos(manager->data->nb_of_philos, manager->data);
+	manager->philos = instantiation_array_philos(manager->data->nb_of_philos,
+			manager->data);
 	if (!manager->philos)
 		return (instantiation_struct_err_msg());
 	return (EXIT_SUCCESS);

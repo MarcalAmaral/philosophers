@@ -6,7 +6,7 @@
 /*   By: myokogaw <myokogaw@student.42sp.org.br>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/02 22:37:24 by myokogaw          #+#    #+#             */
-/*   Updated: 2024/07/03 01:41:06 by myokogaw         ###   ########.fr       */
+/*   Updated: 2024/07/04 00:17:23 by myokogaw         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,14 +21,14 @@ void	ft_putstr_fd(const char *string, int fd)
 
 int	ft_strlen(const char *string)
 {
-	int counter;
+	int	counter;
 
 	counter = 0;
 	if (!string)
 		return (counter);
 	while (string[counter])
 		counter++;
-	return (counter);	
+	return (counter);
 }
 
 long int	ft_atoli(const char *nptr)
